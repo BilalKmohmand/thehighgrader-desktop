@@ -3,6 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "description": "TheHighGrader Desktop Application",
+  "author": "TheHighGrader",
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
@@ -161,8 +163,7 @@
           "target": "nsis",
           "arch": ["x64"]
         }
-      ],
-      "publisherName": "TheHighGrader"
+      ]
     },
     "nsis": {
       "oneClick": false,

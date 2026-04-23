@@ -4,6 +4,21 @@ const path = require("path");
 const fs = require("fs");
 const { execSync } = require("child_process");
 
+// Single instance lock - check if already running
+const pidFile = path.join(process.env.DATA_DIR || "/tmp", "thehighgrader.pid");
+if (fs.existsSync(pidFile)) {
+  try {
+    const pid = parseInt(fs.readFileSync(pidFile, "utf-8").trim());
+    // Check if process is actually running
+    process.kill(pid, 0);
+    console.log("[TheHighGrader] Backend already running (PID:", pid, ")");
+    process.exit(0);
+  } catch (e) {
+    // Process not running, stale PID file
+    fs.unlinkSync(pidFile);
+  }
+}
+
 // Load .env manually
 const envPath = path.join(__dirname, ".env");
 if (fs.existsSync(envPath)) {
@@ -56,6 +71,18 @@ console.log("[TheHighGrader] Starting backend server...");
 console.log("[TheHighGrader] Data directory:", process.env.DATA_DIR);
 console.log("[TheHighGrader] Port:", process.env.PORT);
 
+// Write PID file
+fs.writeFileSync(pidFile, process.pid.toString());
+
+// Cleanup on exit
+process.on("exit", () => {
+  if (fs.existsSync(pidFile)) {
+    fs.unlinkSync(pidFile);
+  }
+});
+process.on("SIGTERM", () => process.exit(0));
+process.on("SIGINT", () => process.exit(0));
+
 // Use tsx to run TypeScript server files
 const { spawn: spawnServer } = require("child_process");
 const npxCmd = process.platform === "win32" ? "npx.cmd" : "npx";
@@ -64,11 +91,15 @@ const serverProc = spawnServer(npxCmd, ["tsx", path.join(__dirname, "index.ts")]
   cwd: __dirname,
   env: { ...process.env },
   stdio: ["ignore", "pipe", "pipe"],
+  detached: false, // Keep attached so we can monitor it
 });
 
 serverProc.stdout?.on("data", (d) => process.stdout.write(d));
 serverProc.stderr?.on("data", (d) => process.stderr.write(d));
 serverProc.on("exit", (code) => {
   console.log("[TheHighGrader] Server exited with code:", code);
+  if (fs.existsSync(pidFile)) {
+    fs.unlinkSync(pidFile);
+  }
   process.exit(code || 0);
 });

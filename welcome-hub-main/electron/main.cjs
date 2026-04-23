@@ -4,6 +4,7 @@ const { spawn } = require("child_process");
 
 const isDev = !app.isPackaged;
 let backendProc = null;
+let windowCreated = false;
 
 function startBackend() {
   if (isDev) return; // In dev mode, backend is started separately
@@ -72,14 +73,28 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  // Single instance lock
+  const gotLock = app.requestSingleInstanceLock();
+  if (!gotLock) {
+    console.log("[main] Another instance is already running, quitting...");
+    app.quit();
+    return;
+  }
+
   startBackend();
 
   // Wait for backend to be ready before loading the window
   const tryLoad = () => {
+    if (windowCreated) return; // Don't create multiple windows
     const http = require("http");
     const req = http.get("http://localhost:5050/health", (res) => {
       res.on("data", () => {});
-      res.on("end", () => createWindow());
+      res.on("end", () => {
+        if (!windowCreated) {
+          windowCreated = true;
+          createWindow();
+        }
+      });
     });
     req.on("error", () => setTimeout(tryLoad, 1000));
     req.end();
@@ -92,7 +107,9 @@ app.whenReady().then(() => {
   }
 
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
   });
 });
 

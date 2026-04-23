@@ -15,16 +15,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: |
-            package-lock.json
-            welcome-hub-main/package-lock.json
+      
+      - name: Create .env file
+        run: |
+          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env
+          echo "PORT=5050" >> .env
       
       - name: Install root dependencies
-        run: npm ci
+        run: npm install
       
       - name: Install frontend dependencies
-        run: cd welcome-hub-main && npm ci
+        run: cd welcome-hub-main && npm install
       
       - name: Build macOS DMG
         run: |
@@ -49,16 +50,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: |
-            package-lock.json
-            welcome-hub-main/package-lock.json
+      
+      - name: Create .env file
+        shell: bash
+        run: |
+          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env
+          echo "PORT=5050" >> .env
       
       - name: Install root dependencies
-        run: npm ci
+        run: npm install
       
       - name: Install frontend dependencies
-        run: cd welcome-hub-main && npm ci
+        run: cd welcome-hub-main && npm install
       
       - name: Build Windows EXE
         run: |
@@ -76,6 +79,8 @@ jobs:
     needs: [build-macos, build-windows]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4

@@ -27,13 +27,25 @@ jobs:
       - name: Install frontend dependencies
         run: cd welcome-hub-main && npm install
       
+      - name: Debug directory structure
+        run: |
+          echo "=== Root directory ==="
+          ls -la
+          echo "=== Server directory ==="
+          ls -la server/ || echo "No server dir"
+          echo "=== welcome-hub-main directory ==="
+          ls -la welcome-hub-main/
+          echo "=== package.json build config ==="
+          cat welcome-hub-main/package.json | grep -A 50 '"build"'
+      
       - name: Build macOS DMG
         run: |
           cd welcome-hub-main
           npm run build
-          npx electron-builder --mac dmg
+          npx electron-builder --mac dmg --publish=never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
+          DEBUG: electron-builder
       
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
@@ -63,11 +75,21 @@ jobs:
       - name: Install frontend dependencies
         run: cd welcome-hub-main && npm install
       
+      - name: Debug directory structure
+        shell: bash
+        run: |
+          echo "=== Root directory ==="
+          ls -la
+          echo "=== Server directory ==="
+          ls -la server/ || echo "No server dir"
+          echo "=== welcome-hub-main directory ==="
+          ls -la welcome-hub-main/
+      
       - name: Build Windows EXE
         run: |
           cd welcome-hub-main
           npm run build
-          npx electron-builder --win nsis
+          npx electron-builder --win nsis --publish=never
       
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4

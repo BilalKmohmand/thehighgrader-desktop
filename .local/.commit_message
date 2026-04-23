@@ -1,0 +1,11 @@
+Fix 9 QA bugs (round 3)
+
+1. Theme persistence: Remove faulty logic in theme-provider.tsx that reset stored "dark" theme to "light" on every page load
+2. Essay "Start New": Reset all form fields (topic, essayType, wordCount, additionalNotes) in addition to clearing result
+3. Student response scrollability: Replace line-clamp-4 with max-h-32 overflow-y-auto so teacher can scroll long responses
+4. Re-evaluate temperature: Add temperature: 0 to /api/teacher/rubric-submissions/:id/reevaluate for deterministic scoring
+5. Grading inconsistency: Add temperature: 0 to /api/rubric-evaluate/:submissionId to match batch evaluate consistency
+6. Class Grader "Grade Another Class": Also reset rubricId and selectedClassId (previously only reset step/results/students)
+7. Grade All Students button: Disable when any student has a name but empty content (not just when ALL lack data)
+8. Report Card "New Comment": Reset studentName, subject, grade, tone, notes alongside result
+9. CSV title consistency: Add assignment name as first row in exported CSV so it's always identifiable

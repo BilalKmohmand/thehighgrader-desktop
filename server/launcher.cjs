@@ -51,18 +51,24 @@ if (!fs.existsSync(nodeModulesPath)) {
   }
 }
 
-// Dynamically import the server
+// Start the server
 console.log("[TheHighGrader] Starting backend server...");
 console.log("[TheHighGrader] Data directory:", process.env.DATA_DIR);
 console.log("[TheHighGrader] Port:", process.env.PORT);
 
-// Use dynamic import for ESM
-import(path.join(__dirname, "index.ts")).catch(() => {
-  // Fallback: try to load compiled JS
-  try {
-    require(path.join(__dirname, "index.js"));
-  } catch (e) {
-    console.error("[TheHighGrader] Failed to start server:", e.message);
-    console.error("[TheHighGrader] Make sure tsx is available or server is compiled.");
-  }
+// Use tsx to run TypeScript server files
+const { spawn: spawnServer } = require("child_process");
+const npxCmd = process.platform === "win32" ? "npx.cmd" : "npx";
+
+const serverProc = spawnServer(npxCmd, ["tsx", path.join(__dirname, "index.ts")], {
+  cwd: __dirname,
+  env: { ...process.env },
+  stdio: ["ignore", "pipe", "pipe"],
+});
+
+serverProc.stdout?.on("data", (d) => process.stdout.write(d));
+serverProc.stderr?.on("data", (d) => process.stderr.write(d));
+serverProc.on("exit", (code) => {
+  console.log("[TheHighGrader] Server exited with code:", code);
+  process.exit(code || 0);
 });

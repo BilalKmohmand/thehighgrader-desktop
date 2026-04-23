@@ -121,10 +121,6 @@
         ]
       },
       {
-        "from": "../.env",
-        "to": "server/.env"
-      },
-      {
         "from": "../shared",
         "to": "server/shared",
         "filter": [
@@ -146,7 +142,7 @@
         {
           "target": "dmg",
           "arch": [
-            "x64"
+            "universal"
           ]
         }
       ],
@@ -173,8 +169,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "TheHighGrader",
-      "installerIcon": "public/favicon.ico"
+      "shortcutName": "TheHighGrader"
     }
   }
 }

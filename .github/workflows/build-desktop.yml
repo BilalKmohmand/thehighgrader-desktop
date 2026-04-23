@@ -10,50 +10,32 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      
+
       - name: Create .env file
         run: |
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env
           echo "PORT=5050" >> .env
-      
+
       - name: Install root dependencies
         run: npm install
-      
+
       - name: Install frontend dependencies
         run: cd welcome-hub-main && npm install
-      
-      - name: Debug directory structure
-        run: |
-          echo "=== Root directory ==="
-          ls -la
-          echo "=== Server directory ==="
-          ls -la server/ || echo "No server dir"
-          echo "=== welcome-hub-main directory ==="
-          ls -la welcome-hub-main/
-          echo "=== package.json build config ==="
-          cat welcome-hub-main/package.json | grep -A 50 '"build"'
-      
+
       - name: Build macOS DMG
         run: |
           cd welcome-hub-main
-          npm run build 2>&1 | tee build.log
-          npx electron-builder --mac dmg --publish=never 2>&1 | tee -a build.log
+          npm run build
+          npx electron-builder --mac dmg --publish=never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
-      
-      - name: Upload build logs on failure
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: macos-build-logs
-          path: welcome-hub-main/build.log
-      
-      - name: Upload macOS artifact
+
+      - name: Upload macOS DMG
         uses: actions/upload-artifact@v4
         with:
           name: macos-dmg
@@ -63,49 +45,31 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      
+
       - name: Create .env file
         shell: bash
         run: |
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env
           echo "PORT=5050" >> .env
-      
+
       - name: Install root dependencies
         run: npm install
-      
+
       - name: Install frontend dependencies
         run: cd welcome-hub-main && npm install
-      
-      - name: Debug directory structure
-        shell: bash
-        run: |
-          echo "=== Root directory ==="
-          ls -la
-          echo "=== Server directory ==="
-          ls -la server/ || echo "No server dir"
-          echo "=== welcome-hub-main directory ==="
-          ls -la welcome-hub-main/
-      
+
       - name: Build Windows EXE
-        shell: bash
         run: |
           cd welcome-hub-main
-          npm run build 2>&1 | tee build.log
-          npx electron-builder --win nsis --publish=never 2>&1 | tee -a build.log
-      
-      - name: Upload build logs on failure
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: windows-build-logs
-          path: welcome-hub-main/build.log
-      
-      - name: Upload Windows artifact
+          npm run build
+          npx electron-builder --win nsis --publish=never
+
+      - name: Upload Windows EXE
         uses: actions/upload-artifact@v4
         with:
           name: windows-exe
@@ -123,10 +87,10 @@ jobs:
         with:
           path: artifacts
           merge-multiple: true
-      
+
       - name: List artifacts
         run: ls -la artifacts/
-      
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:

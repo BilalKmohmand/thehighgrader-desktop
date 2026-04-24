@@ -21,8 +21,14 @@ jobs:
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env
           echo "PORT=5050" >> .env
 
+      - name: Copy .env into server
+        run: cp .env server/.env
+
       - name: Install root dependencies
         run: npm install
+
+      - name: Build backend bundle
+        run: npm run build:server
 
       - name: Install frontend dependencies
         run: cd welcome-hub-main && npm install
@@ -57,8 +63,15 @@ jobs:
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env
           echo "PORT=5050" >> .env
 
+      - name: Copy .env into server
+        shell: bash
+        run: cp .env server/.env
+
       - name: Install root dependencies
         run: npm install
+
+      - name: Build backend bundle
+        run: npm run build:server
 
       - name: Install frontend dependencies
         run: cd welcome-hub-main && npm install

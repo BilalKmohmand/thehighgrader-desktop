@@ -67,8 +67,8 @@ function createWindow() {
     win.loadURL("http://localhost:8080");
     win.webContents.openDevTools({ mode: "detach" });
   } else {
-    // In production, load from the bundled backend server
-    win.loadURL("http://localhost:5050");
+    // In production, load the bundled UI directly. API calls still go to localhost:5050.
+    win.loadFile(path.join(__dirname, "..", "dist", "index.html"));
   }
 }
 
@@ -83,27 +83,9 @@ app.whenReady().then(() => {
 
   startBackend();
 
-  // Wait for backend to be ready before loading the window
-  const tryLoad = () => {
-    if (windowCreated) return; // Don't create multiple windows
-    const http = require("http");
-    const req = http.get("http://localhost:5050/health", (res) => {
-      res.on("data", () => {});
-      res.on("end", () => {
-        if (!windowCreated) {
-          windowCreated = true;
-          createWindow();
-        }
-      });
-    });
-    req.on("error", () => setTimeout(tryLoad, 1000));
-    req.end();
-  };
-
-  if (isDev) {
+  if (!windowCreated) {
+    windowCreated = true;
     createWindow();
-  } else {
-    tryLoad();
   }
 
   app.on("activate", () => {

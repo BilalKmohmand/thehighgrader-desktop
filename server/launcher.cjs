@@ -2,22 +2,7 @@
 // This script starts the Express server from the bundled resources
 const path = require("path");
 const fs = require("fs");
-const { execSync } = require("child_process");
-
-// Single instance lock - check if already running
-const pidFile = path.join(process.env.DATA_DIR || "/tmp", "thehighgrader.pid");
-if (fs.existsSync(pidFile)) {
-  try {
-    const pid = parseInt(fs.readFileSync(pidFile, "utf-8").trim());
-    // Check if process is actually running
-    process.kill(pid, 0);
-    console.log("[TheHighGrader] Backend already running (PID:", pid, ")");
-    process.exit(0);
-  } catch (e) {
-    // Process not running, stale PID file
-    fs.unlinkSync(pidFile);
-  }
-}
+const { spawn } = require("child_process");
 
 // Load .env manually
 const envPath = path.join(__dirname, ".env");
@@ -46,25 +31,27 @@ if (!process.env.DATA_DIR) {
   process.env.DATA_DIR = userDataDir;
 }
 
-process.env.PORT = process.env.PORT || "5050";
-process.env.NODE_ENV = process.env.NODE_ENV || "production";
+fs.mkdirSync(process.env.DATA_DIR, { recursive: true });
 
-// Install npm dependencies if missing (first run)
-const nodeModulesPath = path.join(__dirname, "node_modules");
-if (!fs.existsSync(nodeModulesPath)) {
-  console.log("[TheHighGrader] First run - installing server dependencies...");
+// Single instance lock - check if already running
+const pidFile = path.join(process.env.DATA_DIR, "thehighgrader-backend.pid");
+if (fs.existsSync(pidFile)) {
   try {
-    execSync("npm install --production", {
-      cwd: __dirname,
-      stdio: "pipe",
-      timeout: 300000, // 5 minute timeout
-    });
-    console.log("[TheHighGrader] Dependencies installed successfully.");
-  } catch (e) {
-    console.error("[TheHighGrader] Failed to install dependencies:", e.message);
-    console.error("[TheHighGrader] Please ensure you have internet connection for first run.");
+    const pid = parseInt(fs.readFileSync(pidFile, "utf-8").trim(), 10);
+    process.kill(pid, 0);
+    console.log("[TheHighGrader] Backend already running (PID:", pid, ")");
+    process.exit(0);
+  } catch (_e) {
+    try {
+      fs.unlinkSync(pidFile);
+    } catch (_e2) {
+      // ignore
+    }
   }
 }
+
+process.env.PORT = process.env.PORT || "5050";
+process.env.NODE_ENV = process.env.NODE_ENV || "production";
 
 // Start the server
 console.log("[TheHighGrader] Starting backend server...");
@@ -80,26 +67,30 @@ process.on("exit", () => {
     fs.unlinkSync(pidFile);
   }
 });
+
 process.on("SIGTERM", () => process.exit(0));
 process.on("SIGINT", () => process.exit(0));
 
-// Use tsx to run TypeScript server files
-const { spawn: spawnServer } = require("child_process");
-const npxCmd = process.platform === "win32" ? "npx.cmd" : "npx";
+const serverEntry = path.join(__dirname, "dist", "index.cjs");
+if (!fs.existsSync(serverEntry)) {
+  console.error("[TheHighGrader] Missing server build:", serverEntry);
+  process.exit(1);
+}
 
-const serverProc = spawnServer(npxCmd, ["tsx", path.join(__dirname, "index.ts")], {
+const serverProc = spawn(process.execPath, [serverEntry], {
   cwd: __dirname,
   env: { ...process.env },
   stdio: ["ignore", "pipe", "pipe"],
-  detached: false, // Keep attached so we can monitor it
 });
 
 serverProc.stdout?.on("data", (d) => process.stdout.write(d));
 serverProc.stderr?.on("data", (d) => process.stderr.write(d));
 serverProc.on("exit", (code) => {
   console.log("[TheHighGrader] Server exited with code:", code);
-  if (fs.existsSync(pidFile)) {
-    fs.unlinkSync(pidFile);
+  try {
+    if (fs.existsSync(pidFile)) fs.unlinkSync(pidFile);
+  } catch (_e) {
+    // ignore
   }
   process.exit(code || 0);
 });

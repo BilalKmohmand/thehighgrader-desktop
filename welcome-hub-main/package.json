@@ -118,6 +118,8 @@
           "**/*.js",
           "**/*.cjs",
           "**/*.mjs",
+          "dist/**",
+          ".env",
           "**/*.json",
           "!**/node_modules/**"
         ]
@@ -149,10 +151,10 @@
         }
       ],
       "category": "public.app-category.education",
-      "identity": null,
+      "identity": "-",
       "hardenedRuntime": false,
       "gatekeeperAssess": false,
-      "sign": false
+      "sign": true
     },
     "dmg": {
       "title": "TheHighGrader Installer"

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx -r dotenv/config server/index.ts",
     "build": "tsx script/build.ts",
+    "build:server": "node -e \"require('fs').mkdirSync('server/dist',{recursive:true})\" && npx esbuild server/index.ts --platform=node --bundle --format=cjs --outfile=server/dist/index.cjs",
     "start": "NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
     "db:push": "drizzle-kit push"

@@ -150,11 +150,7 @@
           ]
         }
       ],
-      "category": "public.app-category.education",
-      "identity": "-",
-      "hardenedRuntime": false,
-      "gatekeeperAssess": false,
-      "sign": true
+      "category": "public.app-category.education"
     },
     "dmg": {
       "title": "TheHighGrader Installer"

@@ -68,34 +68,58 @@ function createWindow() {
     win.webContents.openDevTools({ mode: "detach" });
   } else {
     // In production, load the bundled UI directly. API calls still go to localhost:5050.
-    const distPath = path.join(app.getAppPath(), "dist", "index.html");
+    // In packaged apps, files are in the app's resources directory
+    const distPath = path.join(process.resourcesPath, "app", "dist", "index.html");
+    console.log("[main] app.getAppPath():", app.getAppPath());
+    console.log("[main] process.resourcesPath:", process.resourcesPath);
     console.log("[main] Loading UI from:", distPath);
-    win.loadFile(distPath);
+    console.log("[main] __dirname:", __dirname);
+    win.loadFile(distPath).catch((err) => {
+      console.error("[main] Failed to load UI:", err);
+      // Fallback to try app.getAppPath()
+      const fallbackPath = path.join(app.getAppPath(), "dist", "index.html");
+      console.log("[main] Trying fallback path:", fallbackPath);
+      win.loadFile(fallbackPath).catch((fallbackErr) => {
+        console.error("[main] Fallback also failed:", fallbackErr);
+      });
+    });
   }
 }
 
-app.whenReady().then(() => {
-  // Single instance lock
-  const gotLock = app.requestSingleInstanceLock();
-  if (!gotLock) {
-    console.log("[main] Another instance is already running, quitting...");
-    app.quit();
-    return;
-  }
+// Request single instance lock before app is ready
+const gotLock = app.requestSingleInstanceLock();
 
-  startBackend();
+if (!gotLock) {
+  console.log("[main] Another instance is already running, quitting...");
+  app.quit();
+} else {
+  app.whenReady().then(() => {
+    console.log("[main] Got single instance lock, starting app...");
 
-  if (!windowCreated) {
-    windowCreated = true;
-    createWindow();
-  }
+    startBackend();
 
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
+    if (!windowCreated) {
+      windowCreated = true;
       createWindow();
     }
+
+    app.on("activate", () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+      }
+    });
   });
-});
+
+  app.on("second-instance", () => {
+    // Someone tried to run a second instance, focus the existing window
+    console.log("[main] Second instance detected, focusing existing window");
+    const existingWindow = BrowserWindow.getAllWindows()[0];
+    if (existingWindow) {
+      if (existingWindow.isMinimized()) existingWindow.restore();
+      existingWindow.focus();
+    }
+  });
+}
 
 app.on("window-all-closed", () => {
   stopBackend();

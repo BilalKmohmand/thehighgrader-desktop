@@ -68,7 +68,9 @@ function createWindow() {
     win.webContents.openDevTools({ mode: "detach" });
   } else {
     // In production, load the bundled UI directly. API calls still go to localhost:5050.
-    win.loadFile(path.join(__dirname, "..", "dist", "index.html"));
+    const distPath = path.join(app.getAppPath(), "dist", "index.html");
+    console.log("[main] Loading UI from:", distPath);
+    win.loadFile(distPath);
   }
 }
 
